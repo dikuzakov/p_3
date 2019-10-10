@@ -1,3 +1,4 @@
+from tkinter import *
 from graph import *
 
 c = canvas()
