@@ -3,8 +3,7 @@ from random import randrange as rnd, choice
 import random
 import math as m
 
-
-def create_ball():
+'''def create_ball():
     global Aball
     for i in range(len(Aball)):
         Aball[i].delete()
@@ -15,7 +14,39 @@ def create_ball():
     for i in range(len(Aball)):
         Aball[i].motion()
 
-    root.after(3000, create_ball)
+    root.after(3000, create_ball)'''
+
+
+class Vector:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __mul__(self, other):
+        return self.x * other.x + self.y * other.y
+
+    def lmul(self, l):
+        self.x *= l
+        self.y *= l
+        return self
+
+    def __add__(self, other):
+        vector = Vector(self.x + other.x, self.y + other.y)
+        return vector
+
+    def __sub__(self, other):
+        vector = Vector(self.x - other.x, self.y - other.y)
+        return vector
+
+    def __neg__(self):
+        vector = Vector(- self.x, - self.y)
+        return vector
+
+    def __abs__(self):
+        return m.sqrt(self.x ** 2 + self.y ** 2)
+
+    def pr(self, other):
+        return other.lmul(other.__mul__(self) / (other.__abs__() ** 2))
 
 
 class Ball:
@@ -39,9 +70,9 @@ class Ball:
         c.delete(self.id)
 
     def motion(self):
-        #gravitation
+        # gravitation
         self.t += m.pi / 150
-        a = 2.5
+        a = 0
         ay = a * m.cos(self.t % 2 * m.pi)
         ax = a * m.sin(self.t % 2 * m.pi)
         global c, Aball
@@ -63,14 +94,13 @@ class Ball:
         self.x += self.dx
         self.y += self.dy
         self.redraw()
-        '''for i in range(len(Aball)):
+        for i in range(len(Aball)):
             for j in range(i + 1, len(Aball)):
-                Aball[i].hit(Aball[j])'''
-
+                Aball[i].hit(Aball[j])
         root.after(70, self.motion)
 
     def check(self, x, y):
-        if (x - self.x)**2 + (y - self.y)**2 < (self.r)**2:
+        if (x - self.x) ** 2 + (y - self.y) ** 2 < (self.r) ** 2:
             return True
         else:
             return False
@@ -78,26 +108,24 @@ class Ball:
     def redraw(self):
         c.coords(self.id, self.x - self.r, self.y - self.r, self.x + self.r, self.y + self.r)
 
-    '''def hit(self, ball):
-        if((self.x - ball.x)**2 + (self.y - ball.y)**2 < (self.r + ball.r)**2):
-            ux = ball.dx
-            uy = ball.dy
-            vx = self.dx
-            vy = self.dy
-            alpha = m.atan((ball.y - self.y) / (ball.x - self.x))
-            vx -= ux
-            vy -= uy
-            beta = m.atan(-vy / -vx)
-            vp = m.sqrt(vy**2 + vx**2) * m.cos(alpha - beta)
-            vs = m.sqrt(vy**2 + vx**2) * m.sin(alpha - beta)
-            ux += vp * m.cos(alpha)
-            uy += vp * m.sin(alpha)
-            vx -= vp * m.cos(alpha) - vs * m.sin(beta)
-            vy += vp * m.sin(alpha) - vs * m.cos(beta)
-            ball.dx = ux
-            ball.dy = uy
-            self.dx = vx
-            self.dy = vy'''
+    def hit(self, ball):
+        if ((self.x - ball.x) ** 2 + (self.y - ball.y) ** 2 < (self.r + ball.r) ** 2):
+            v1 = Vector(self.dx, self.dy)
+            v2 = Vector(ball.dx, ball.dy)
+            r = Vector(ball.x - self.x, ball.y - self.y)
+            v1p = v1.pr(r)
+            v1s = v1 - v1p
+            print(v1p.x, v1p.y)
+            v2p = v2.pr(r)
+            print(v1p.x, v1p.y)
+            v2s = v2 - v2p
+            (v1p, v2p) = (v2p, v1p)
+            v1 = v1p + v1s
+            v2 = v2p + v2s
+            self.dx = v1.x
+            self.dy = v1.y
+            ball.dx = v2.x
+            ball.dy = v2.y
 
 
 def click(event):
@@ -112,11 +140,22 @@ def click(event):
             point += 1
             deko = i
             print(point)
-            c.itemconfig(MyText, text = "points = {0}".format(point))
+            c.itemconfig(MyText, text="points = {0}".format(point))
     if deko > -1:
         Aball.remove(Aball[deko])
 
 
+v1 = Vector(20, 0)
+v2 = Vector(10, 0)
+v = Vector(10, 0)
+#print(v2.x, v2.y)
+#print(v1.x, v1.y)
+v1r = v1.pr(v)
+#print(v1.x, v1.y)
+#print(v2.x, v2.y)
+vec1 = Vector(1, 0)
+vec2 = Vector(2, 0)
+#print(vec1.pr(vec2).x, vec1.pr(vec2).y)
 point = 0
 root = Tk()
 W = 800
@@ -126,7 +165,19 @@ c.pack()
 color = ['red', 'orange', 'yellow', 'green', 'blue']
 Aball = []
 MyText = c.create_text(40, 40, text="", anchor=NW, font="arial 20")
-create_ball()
+
+ball1 = Ball(100, 50)
+ball1.dx = 10
+ball1.dy = 0
+ball2 = Ball(700, 50)
+ball2.dx = - 10
+ball2.dy = 0
+ball1.draw()
+ball2.draw()
+ball1.motion()
+ball2.motion()
+Aball.append(ball1)
+Aball.append(ball2)
+# create_ball()
 c.bind('<Button-1>', click)
 root.mainloop()
-

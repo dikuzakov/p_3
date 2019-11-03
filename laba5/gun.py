@@ -73,7 +73,10 @@ class Ball:
             Возвращает True в случае столкновения мяча и цели. В противном случае возвращает False.
         """
         # FIXME
-        pass
+        if (self.x - obj.x) ** 2 + (self.y - obj.y) ** 2 < (self.r + obj.r) ** 2:
+            return True
+        else:
+            return False
 
 
 class Gun:
@@ -127,6 +130,9 @@ class Gun:
 
 
 class Target:
+    x = rnd(600, 750)
+    y = rnd(300, 550)
+    r = rnd(2, 50)
     points = 0
     live = 1
 
@@ -138,17 +144,15 @@ class Target:
 
     def new_target(self):
         """ Инициализация новой цели. """
-        x = rnd(600, 750)
-        y = rnd(300, 550)
-        r = rnd(2, 50)
         color = 'red'
-        canvas.coords(self.id, x - r, y - r, x + r, y + r)
+        canvas.coords(self.id, self.x - self.r, self.y - self.r, self.x + self.r, self.y + self.r)
         canvas.itemconfig(self.id, fill=color)
 
-    def hit(self, points=1):
+    def hit(self):
         """Попадание шарика в цель."""
         canvas.coords(self.id, -10, -10, -10, -10)
-        self.points += points
+        self.points += 1
+        print('points')
         canvas.itemconfig(self.id_points, text=self.points)
 
 
