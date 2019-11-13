@@ -3,18 +3,46 @@ from random import randrange as rnd, choice
 import random
 import math as m
 
-'''def create_ball():
-    global Aball
+
+def new_game():
+    global miss, c
+    c.itemconfig(MyText, text="Не делайте больше пяти промахов!")
+    create_ball()
+
+
+def end_game():
+    global btn, c
     for i in range(len(Aball)):
         Aball[i].delete()
     Aball.clear()
-    for i in range(random.randint(1, 5)):
+
+
+def restart(event):
+    global miss, c, point
+    miss = 0
+    point = 0
+    score_label['text'] = 'Ваши очки:' + str(point)
+    new_game()
+
+
+def cancel():
+    global job
+    root.after_cancel(job)
+    job = None
+    end_game()
+
+
+def create_ball():
+    global Aball, job
+    for i in range(len(Aball)):
+        Aball[i].delete()
+    Aball.clear()
+    for i in range(random.randint(5, 10)):
         Aball.append(Ball(rnd(100, 700), rnd(100, 500)))
         Aball[i].draw()
     for i in range(len(Aball)):
         Aball[i].motion()
-
-    root.after(3000, create_ball)'''
+    job = root.after(7000, create_ball)
 
 
 class Vector:
@@ -25,7 +53,7 @@ class Vector:
     def __mul__(self, other):
         return self.x * other.x + self.y * other.y
 
-    def lmul(self, l):
+    def lambdamultiplication(self, l):
         self.x *= l
         self.y *= l
         return self
@@ -46,7 +74,7 @@ class Vector:
         return m.sqrt(self.x ** 2 + self.y ** 2)
 
     def pr(self, other):
-        return other.lmul(other.__mul__(self) / (other.__abs__() ** 2))
+        return other.lambdamultiplication(other.__mul__(self) / (other.__abs__() ** 2))
 
 
 class Ball:
@@ -58,9 +86,9 @@ class Ball:
         self.r = rnd(self.r_min, self.r_max)
         self.x = x_coord
         self.y = y_coord
-        speed = 30
-        self.dx = rnd(-speed, speed)
-        self.dy = rnd(-speed, speed)
+        speed = 15
+        self.dx = 0.5 * (rnd(-speed, speed) + rnd(-speed, speed))
+        self.dy = 0.5 * (rnd(-speed, speed) + rnd(-speed, speed))
         self.id = 0
 
     def draw(self):
@@ -72,7 +100,7 @@ class Ball:
     def motion(self):
         # gravitation
         self.t += m.pi / 150
-        a = 0
+        a = 0.5
         ay = a * m.cos(self.t % 2 * m.pi)
         ax = a * m.sin(self.t % 2 * m.pi)
         global c, Aball
@@ -109,15 +137,16 @@ class Ball:
         c.coords(self.id, self.x - self.r, self.y - self.r, self.x + self.r, self.y + self.r)
 
     def hit(self, ball):
+        # иногда шарики меняются координатами - не понимаю, почему
         if ((self.x - ball.x) ** 2 + (self.y - ball.y) ** 2 < (self.r + ball.r) ** 2):
             v1 = Vector(self.dx, self.dy)
             v2 = Vector(ball.dx, ball.dy)
             r = Vector(ball.x - self.x, ball.y - self.y)
+            dr = r.lambdamultiplication(-(m.sqrt((self.x - ball.x) ** 2 + (self.y - ball.y) ** 2) + (self.r + ball.r)) / abs(r))
+            #p - скорость вдоль r, s - скорость перпендикулярная
             v1p = v1.pr(r)
             v1s = v1 - v1p
-            print(v1p.x, v1p.y)
-            v2p = v2.pr(r)
-            print(v1p.x, v1p.y)
+            v2p = v2.pr(-r)
             v2s = v2 - v2p
             (v1p, v2p) = (v2p, v1p)
             v1 = v1p + v1s
@@ -126,58 +155,48 @@ class Ball:
             self.dy = v1.y
             ball.dx = v2.x
             ball.dy = v2.y
+            ball.x += dr.x / 2
+            ball.y += dr.y / 2
+            self.x -= dr.x / 2
+            self.y -= dr.y / 2
 
 
 def click(event):
-    global point
-    global MyText
-    global c
+    global point, MyText, c, miss
+    if miss >= 4:
+        cancel()
+
     deko = -1
-    print("Click!")
     for i in range(len(Aball)):
         if Aball[i].check(event.x, event.y):
             Aball[i].delete()
             point += 1
             deko = i
-            print(point)
-            c.itemconfig(MyText, text="points = {0}".format(point))
+            score_label['text'] = 'Ваши очки:' + str(point)
     if deko > -1:
         Aball.remove(Aball[deko])
+    else:
+        miss += 1
+        c.itemconfig(MyText, text="miss = {0}".format(miss))
 
 
-v1 = Vector(20, 0)
-v2 = Vector(10, 0)
-v = Vector(10, 0)
-#print(v2.x, v2.y)
-#print(v1.x, v1.y)
-v1r = v1.pr(v)
-#print(v1.x, v1.y)
-#print(v2.x, v2.y)
-vec1 = Vector(1, 0)
-vec2 = Vector(2, 0)
-#print(vec1.pr(vec2).x, vec1.pr(vec2).y)
+miss = 0
+job = None
 point = 0
 root = Tk()
 W = 800
 H = 700
-c = Canvas(root, width=W, height=H, bg='white')
-c.pack()
+root.geometry(str(W) + 'x' + str(H))
+c = Canvas(root, bg='white')
+c.pack(fill=BOTH, expand=1)
 color = ['red', 'orange', 'yellow', 'green', 'blue']
 Aball = []
 MyText = c.create_text(40, 40, text="", anchor=NW, font="arial 20")
-
-ball1 = Ball(100, 50)
-ball1.dx = 10
-ball1.dy = 0
-ball2 = Ball(700, 50)
-ball2.dx = - 10
-ball2.dy = 0
-ball1.draw()
-ball2.draw()
-ball1.motion()
-ball2.motion()
-Aball.append(ball1)
-Aball.append(ball2)
-# create_ball()
+score_label = Label(root, bg='black', fg='white', width=20)
+score_label.pack(anchor=NE)
+btn = Button(root, text="Start/Restart")
+btn.pack(anchor=NE)
+new_game()
 c.bind('<Button-1>', click)
+btn.bind('<Button-1>', restart)
 root.mainloop()
