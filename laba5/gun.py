@@ -2,6 +2,7 @@ from random import randrange as rnd, choice
 import tkinter as tk
 import math
 import time
+#Написано очень плохо. Наследование пробовал реализовать, но многоугольники не работали
 
 
 class Scoreboard:
@@ -20,7 +21,7 @@ class Ball:
     global gun
 
     def __init__(self):
-        self.time = 30
+        self.time = 0
         self.x = gun.x + max(gun.f2_power, 20) * math.cos(gun.angle)
         self.y = gun.y + max(gun.f2_power, 20) * math.sin(gun.angle)
         self.r = rnd(7, 10)
@@ -55,6 +56,7 @@ class Ball:
     def move(self):
 
         if self.y + self.r < 600 and self.x + self.r < 800:
+            self.time += 1
             self.x += self.vx
             self.y += self.vy
             self.vy += self.ay
@@ -81,7 +83,7 @@ class Rectangle:
     global gun
 
     def __init__(self):
-        self.time = 30
+        self.time = 0
         self.x = gun.x + max(gun.f2_power, 20) * math.cos(gun.angle)
         self.y = gun.y + max(gun.f2_power, 20) * math.sin(gun.angle)
         self.r = rnd(7, 10)
@@ -114,6 +116,7 @@ class Rectangle:
 
     def move(self):
         if self.y + self.r < 580 and self.x + self.r < 800:
+            self.time += 1
             self.x += self.vx
             self.y -= self.vy
             self.vy += self.ay
@@ -305,7 +308,7 @@ def new_game():
         for b in balls:
             if b.wall == 0:
                 canvas.delete(b.id)
-            if b.time <= 0 and abs(b.vy) > 3 and abs(b.vx) > 3:
+            if b.time >= 20 and b.time <= 500:
                 new_ball_1 = Rectangle()
                 new_ball_1.x = b.x
                 new_ball_1.y = b.y
@@ -318,12 +321,19 @@ def new_game():
                 new_ball_2.vx = b.vx + rnd(-5, 5)
                 new_ball_2.vy = b.vy + rnd(-5, 5)
                 new_ball_2.draw()
+                new_ball_1.time = 2000
+                new_ball_2.time = 2000
+                print(b.x, b.y, new_ball_1.x, new_ball_1.y)
                 canvas.delete(b.id)
+                b.x = -10
+                b.y = -10
+                b.vx = 0
+                b.vy = 0
+                b.time = 2000
                 balls += [new_ball_1]
                 balls += [new_ball_2]
             else:
                 b.move()
-                b.time -= 1
             for j in range(target_number):
                 if b.hittest(targets[j]) and targets[j].live:
                     targets_lives -= targets[j].live
@@ -331,7 +341,7 @@ def new_game():
                     targets[j].hit()
                     score.update_score()
         canvas.update()
-        time.sleep(0.3)
+        time.sleep(0.03)
         gun.targetting()
         gun.power_up()
     for i in range(len(balls) - 1, -1, -1):
