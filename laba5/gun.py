@@ -2,7 +2,6 @@ from random import randrange as rnd, choice
 import tkinter as tk
 import math
 import time
-#Написано очень плохо. Наследование пробовал реализовать, но многоугольники не работали
 
 
 class Scoreboard:
@@ -17,11 +16,12 @@ class Scoreboard:
         canvas.itemconfig(self.id_points, text=self.score)
 
 
-class Ball:
+class Shell:
     global gun
 
     def __init__(self):
         self.time = 0
+        self.wall = 10
         self.x = gun.x + max(gun.f2_power, 20) * math.cos(gun.angle)
         self.y = gun.y + max(gun.f2_power, 20) * math.sin(gun.angle)
         self.r = rnd(7, 10)
@@ -29,14 +29,6 @@ class Ball:
         self.vx = 0
         self.vy = 0
         self.color = choice(['blue', 'green', 'red', 'brown'])
-        self.id = canvas.create_oval(
-                self.x - self.r,
-                self.y - self.r,
-                self.x + self.r,
-                self.y + self.r,
-                fill=self.color
-        )
-        self.wall = 10
 
     def hittest(self, obj):
         if (self.x - obj.x) ** 2 + (self.y - obj.y) ** 2 < (self.r + obj.r) ** 2:
@@ -44,22 +36,12 @@ class Ball:
         else:
             return False
 
-    def draw(self):
-        canvas.coords(
-                self.id,
-                self.x - self.r,
-                self.y - self.r,
-                self.x + self.r,
-                self.y + self.r
-        )
-
     def move(self):
-
         if self.y + self.r < 600 and self.x + self.r < 800:
             self.time += 1
             self.x += self.vx
-            self.y += self.vy
-            self.vy += self.ay
+            self.y -= self.vy
+            self.vy -= self.ay
 
         elif self.y + self.r > 600:
             self.wall -= 1
@@ -78,20 +60,38 @@ class Ball:
             self.wall -= 1
         self.draw()
 
+    def draw(self):
+        pass
 
-class Rectangle:
+
+class Ball(Shell):
     global gun
 
     def __init__(self):
-        self.time = 0
-        self.x = gun.x + max(gun.f2_power, 20) * math.cos(gun.angle)
-        self.y = gun.y + max(gun.f2_power, 20) * math.sin(gun.angle)
-        self.r = rnd(7, 10)
-        self.ay = - 0.5
-        self.vx = 0
-        self.vy = 0
-        self.color = choice(['blue', 'green', 'red', 'brown'])
-        self.wall = 10
+        Shell.__init__(self)
+        self.id = canvas.create_oval(
+                self.x - self.r,
+                self.y - self.r,
+                self.x + self.r,
+                self.y + self.r,
+                fill=self.color
+        )
+
+    def draw(self):
+        canvas.coords(
+                self.id,
+                self.x - self.r,
+                self.y - self.r,
+                self.x + self.r,
+                self.y + self.r
+        )
+
+
+class Rectangle(Shell):
+    global gun
+
+    def __init__(self):
+        Shell.__init__(self)
         self.n = rnd(3, 10)
         self.points = []
         for i in range(self.n):
@@ -100,42 +100,13 @@ class Rectangle:
         canvas.itemconfig(self.id, fill=self.color)
 
     def draw(self):
+        self.points = []
         for i in range(self.n):
             self.points += (self.x + self.r * math.cos(math.pi * 2 * i / self.n), self.y - self.r * math.sin(math.pi * 2 * i / self.n))
-            canvas.coords(
-                self.id,
-                self.points
-            )
-
-    def hittest(self, obj):
-        if (self.x - obj.x) ** 2 + (self.y - obj.y) ** 2 < (self.r + obj.r) ** 2:
-            return True
-        else:
-            return False
-
-    def move(self):
-        if self.y + self.r < 580 and self.x + self.r < 800:
-            self.time += 1
-            self.x += self.vx
-            self.y -= self.vy
-            self.vy += self.ay
-
-        elif self.y + self.r > 580:
-            self.wall -= 1
-            self.vx = 0.6*self.vx
-
-            self.vy = (-0.6)*self.vy
-            self.y = 579 - self.r
-
-        elif self.x + self.r > 800:
-            self.wall -= 1
-            self.vx = (-0.6)*self.vx
-            self.x = 799 - self.r
-        if abs(self.vy) < 5 and self.y + self.r >= 580 + self.vy:
-            self.y = 580 - self.r
-            self.vy = 0
-            self.wall -= 1
-        self.draw()
+        canvas.coords(
+            self.id,
+            self.points
+        )
 
 
 class Gun:
@@ -165,7 +136,6 @@ class Gun:
         self.f2_power = 10
 
     def targetting(self, event=0):
-        """Прицеливание. Зависит от положения мыши."""
         if event:
             self.angle = math.atan((event.y - 450) / (event.x - 20))
         if self.f2_on:
@@ -190,8 +160,7 @@ class Gun:
         self.y += y
 
 
-class TargetBall:
-
+class Target:
     def __init__(self):
         self.x = rnd(500, 750)
         self.y = rnd(300, 500)
@@ -200,12 +169,38 @@ class TargetBall:
         self.vy = rnd(-5, 5)
         self.ay = 0
         self.color = 'red'
-        self.id = canvas.create_oval(self.x - self.r, self.y - self.r, self.x + self.r, self.y + self.r)
         self.live = 1
-        canvas.itemconfig(self.id, fill=self.color)
 
     def hit(self):
         canvas.coords(self.id, -10, -10, -10, -10)
+
+    def draw(self):
+        pass
+
+    def move(self):
+        if self.y - self.r < 0:
+            self.y = self.r + 1
+            self.vy = (-1) * self.vy
+        elif self.y + self.r > 600:
+            self.y = 600 - self.r - 1
+            self.vy = (-1) * self.vy
+        else:
+            self.y -= self.vy
+        self.draw()
+
+    def hittest(self, obj):
+        if (self.x - obj.x) ** 2 + (self.y - obj.y) ** 2 < (self.r + obj.r) ** 2:
+            return True
+        else:
+            return False
+
+
+class TargetBall(Target):
+
+    def __init__(self):
+        Target.__init__(self)
+        self.id = canvas.create_oval(self.x - self.r, self.y - self.r, self.x + self.r, self.y + self.r)
+        canvas.itemconfig(self.id, fill=self.color)
 
     def draw(self):
         canvas.coords(
@@ -216,34 +211,10 @@ class TargetBall:
                 self.y + self.r
         )
 
-    def move(self):
-        if self.y - self.r < 0:
-            self.y = self.r + 1
-            self.vy = (-1) * self.vy
-        elif self.y + self.r > 600:
-            self.y = 600 - self.r - 1
-            self.vy = (-1) * self.vy
-        else:
-            self.y -= self.vy
-        self.draw()
 
-    def hittest(self, obj):
-        if (self.x - obj.x) ** 2 + (self.y - obj.y) ** 2 < (self.r + obj.r) ** 2:
-            return True
-        else:
-            return False
-
-
-class TargetRectangle:
+class TargetRectangle(Target):
     def __init__(self):
-        self.x = rnd(500, 750)
-        self.y = rnd(300, 500)
-        self.r = rnd(20, 40)
-        self.vx = 0
-        self.vy = rnd(-5, 5)
-        self.ay = 0
-        self.color = 'red'
-        self.live = 1
+        Target.__init__(self)
         self.n = rnd(3, 10)
         self.points = []
         for i in range(self.n):
@@ -251,38 +222,18 @@ class TargetRectangle:
         self.id = canvas.create_polygon(self.points, outline="black")
         canvas.itemconfig(self.id, fill=self.color)
 
-    def hit(self):
-        canvas.coords(self.id, -10, -10, -10, -10)
-
-    def move(self):
-        if self.y - self.r < 0:
-            self.y = self.r + 1
-            self.vy = (-1) * self.vy
-        elif self.y + self.r > 600:
-            self.y = 600 - self.r - 1
-            self.vy = (-1) * self.vy
-        else:
-            self.y -= self.vy
-        self.draw()
-
     def draw(self):
-        for i in range(len(self.points) // 2):
-                self.points[2 * i + 1] -= self.vy
-                self.points[2 * i] += self.vx
-                canvas.coords(
-                    self.id,
-                    self.points
-                )
-
-    def hittest(self, obj):
-        if (self.x - obj.x) ** 2 + (self.y - obj.y) ** 2 < (self.r + obj.r) ** 2:
-            return True
-        else:
-            return False
+        self.points = []
+        for i in range(self.n):
+            self.points += (self.x + self.r * math.cos(math.pi * 2 * i / self.n), self.y - self.r * math.sin(math.pi * 2 * i / self.n))
+        canvas.coords(
+            self.id,
+            self.points
+        )
 
 
 def new_game():
-    global balls, bullet, target, score, target_number
+    global balls, bullet, score, target_number, to_del, i
     bullet = 0
     balls = []
     targets = []
@@ -301,36 +252,17 @@ def new_game():
     root.bind('<Right>', lambda event: gun.move(2, 0))
     canvas.itemconfig(screen1, text='')
     while targets_lives:
+        to_del = []
         for j in range(target_number):
             if targets[j].live == 1:
                 targets[j].move()
-        for b in balls:
+
+        for i, b in enumerate(balls):
             if b.wall == 0:
+                to_del.append(i)
                 canvas.delete(b.id)
             if b.time >= 20 and b.time <= 500:
-                new_ball_1 = Rectangle()
-                new_ball_1.x = b.x
-                new_ball_1.y = b.y
-                new_ball_1.vx = b.vx + rnd(-5, 5)
-                new_ball_1.vy = b.vy + rnd(-5, 5)
-                new_ball_1.draw()
-                new_ball_2 = Rectangle()
-                new_ball_2.x = b.x
-                new_ball_2.y = b.y
-                new_ball_2.vx = b.vx + rnd(-5, 5)
-                new_ball_2.vy = b.vy + rnd(-5, 5)
-                new_ball_2.draw()
-                new_ball_1.time = 2000
-                new_ball_2.time = 2000
-                print(b.x, b.y, new_ball_1.x, new_ball_1.y)
-                canvas.delete(b.id)
-                b.x = -10
-                b.y = -10
-                b.vx = 0
-                b.vy = 0
-                b.time = 2000
-                balls += [new_ball_1]
-                balls += [new_ball_2]
+                two_figure(b)
             else:
                 b.move()
             for j in range(target_number):
@@ -339,6 +271,11 @@ def new_game():
                     targets[j].live = 0
                     targets[j].hit()
                     score.update_score()
+
+        if to_del:
+            for i in range(len(to_del) - 1, -1, -1):
+                del balls[to_del[i]]
+
         canvas.update()
         time.sleep(0.03)
         gun.targetting()
@@ -354,6 +291,33 @@ def new_game():
     canvas.delete(gun)
     root.after(1000, new_game)
 
+def two_figure(b):
+    global balls, to_del, i
+    print(to_del)
+    new_ball_1 = Rectangle()
+    new_ball_1.x = b.x
+    new_ball_1.y = b.y
+    new_ball_1.vx = b.vx + rnd(-5, 5)
+    new_ball_1.vy = b.vy + rnd(-5, 5)
+    new_ball_1.draw()
+    new_ball_2 = Rectangle()
+    new_ball_2.x = b.x
+    new_ball_2.y = b.y
+    rd = 10
+    new_ball_2.vx = b.vx + rnd(-rd, rd)
+    new_ball_2.vy = b.vy + rnd(-rd, rd)
+    new_ball_2.draw()
+    new_ball_1.time = 2000
+    new_ball_2.time = 2000
+    canvas.delete(b.id)
+    to_del.append(i)
+    b.x = -10
+    b.y = -10
+    b.vx = 0
+    b.vy = 0
+    b.time = 2000
+    balls += [new_ball_1]
+    balls += [new_ball_2]
 
 def main():
     global root, canvas, screen1, gun, bullet, balls, score, target_number
