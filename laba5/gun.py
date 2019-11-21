@@ -100,13 +100,12 @@ class Rectangle:
         canvas.itemconfig(self.id, fill=self.color)
 
     def draw(self):
-        for i in range(len(self.points) // 2):
-                self.points[2 * i + 1] -= self.vy
-                self.points[2 * i] += self.vx
-                canvas.coords(
-                    self.id,
-                    self.points
-                )
+        for i in range(self.n):
+            self.points += (self.x + self.r * math.cos(math.pi * 2 * i / self.n), self.y - self.r * math.sin(math.pi * 2 * i / self.n))
+            canvas.coords(
+                self.id,
+                self.points
+            )
 
     def hittest(self, obj):
         if (self.x - obj.x) ** 2 + (self.y - obj.y) ** 2 < (self.r + obj.r) ** 2:
@@ -308,30 +307,30 @@ def new_game():
         for b in balls:
             if b.wall == 0:
                 canvas.delete(b.id)
-            # if b.time >= 20 and b.time <= 500:
-            #     new_ball_1 = Rectangle()
-            #     new_ball_1.x = b.x
-            #     new_ball_1.y = b.y
-            #     new_ball_1.vx = b.vx + rnd(-5, 5)
-            #     new_ball_1.vy = b.vy + rnd(-5, 5)
-            #     new_ball_1.draw()
-            #     new_ball_2 = Rectangle()
-            #     new_ball_2.x = b.x
-            #     new_ball_2.y = b.y
-            #     new_ball_2.vx = b.vx + rnd(-5, 5)
-            #     new_ball_2.vy = b.vy + rnd(-5, 5)
-            #     new_ball_2.draw()
-            #     new_ball_1.time = 2000
-            #     new_ball_2.time = 2000
-            #     print(b.x, b.y, new_ball_1.x, new_ball_1.y)
-            #     canvas.delete(b.id)
-            #     b.x = -10
-            #     b.y = -10
-            #     b.vx = 0
-            #     b.vy = 0
-            #     b.time = 2000
-            #     balls += [new_ball_1]
-            #     balls += [new_ball_2]
+            if b.time >= 20 and b.time <= 500:
+                new_ball_1 = Rectangle()
+                new_ball_1.x = b.x
+                new_ball_1.y = b.y
+                new_ball_1.vx = b.vx + rnd(-5, 5)
+                new_ball_1.vy = b.vy + rnd(-5, 5)
+                new_ball_1.draw()
+                new_ball_2 = Rectangle()
+                new_ball_2.x = b.x
+                new_ball_2.y = b.y
+                new_ball_2.vx = b.vx + rnd(-5, 5)
+                new_ball_2.vy = b.vy + rnd(-5, 5)
+                new_ball_2.draw()
+                new_ball_1.time = 2000
+                new_ball_2.time = 2000
+                print(b.x, b.y, new_ball_1.x, new_ball_1.y)
+                canvas.delete(b.id)
+                b.x = -10
+                b.y = -10
+                b.vx = 0
+                b.vy = 0
+                b.time = 2000
+                balls += [new_ball_1]
+                balls += [new_ball_2]
             else:
                 b.move()
             for j in range(target_number):
